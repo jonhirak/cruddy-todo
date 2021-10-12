@@ -14,13 +14,13 @@ exports.create = (text, callback) => {
 
   counter.getNextUniqueId((err, id) => {
     if (err) {
-      throw err;
+      callback(err);
     } else {
       //create new doc w/filesystem
       var file = exports.dataDir + `/${id}.txt`;
       fs.writeFile(file, text, (err) => {
         if (err) {
-          throw err;
+          callback(err);
         }
 
         callback(null, { id, text });
@@ -41,7 +41,7 @@ exports.readAll = (callback) => {
     });
 
     if (err) {
-      throw err;
+      callback(err);
     } else {
       callback(null, data);
     }
@@ -49,22 +49,36 @@ exports.readAll = (callback) => {
 };
 
 exports.readOne = (id, callback) => {
-  var text = items[id];
-  if (!text) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    callback(null, { id, text });
-  }
+  var file = exports.dataDir + `/${id}.txt`;
+  fs.readFile(file, (err, text) => {
+    if (err) {
+      callback(err);
+    } else if (!text) {
+      callback(new Error(`No item with id: ${id}`));
+    } else {
+      text = text.toString();
+      var data = {id, text};
+      callback(null, data);
+    }
+  });
 };
 
 exports.update = (id, text, callback) => {
-  var item = items[id];
-  if (!item) {
-    callback(new Error(`No item with id: ${id}`));
-  } else {
-    items[id] = text;
-    callback(null, { id, text });
-  }
+  var file = exports.dataDir + `/${id}.txt`;
+  fs.open(file, 'r+', (err, fd) => {
+    if (err) {
+      callback(err);
+    } else {
+      fs.writeFile(file, text, (err) => {
+        if (err) {
+          callback(err);
+        } else {
+          console.log('The file has been saved!');
+          callback(null, id);
+        }
+      });
+    }
+  });
 };
 
 exports.delete = (id, callback) => {
