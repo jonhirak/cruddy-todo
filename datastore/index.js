@@ -8,16 +8,44 @@ var items = {};
 // Public API - Fix these CRUD functions ///////////////////////////////////////
 
 exports.create = (text, callback) => {
-  var id = counter.getNextUniqueId();
-  items[id] = text;
-  callback(null, { id, text });
+  // var id = counter.getNextUniqueId();
+  // items[id] = text;
+  // callback(null, { id, text });
+
+  counter.getNextUniqueId((err, id) => {
+    if (err) {
+      throw err;
+    } else {
+      //create new doc w/filesystem
+      var file = exports.dataDir + `/${id}.txt`;
+      fs.writeFile(file, text, (err) => {
+        if (err) {
+          throw err;
+        }
+
+        callback(null, { id, text });
+        console.log('Saved successfully!');
+      });
+    }
+  });
 };
 
 exports.readAll = (callback) => {
-  var data = _.map(items, (text, id) => {
-    return { id, text };
+
+  // callback(null, data);
+  fs.readdir(exports.dataDir, (err, files) => {
+
+    var data = _.map(files, (file, i) => {
+      file = file.slice(0, file.indexOf('.'));
+      return { id: file, text: file };
+    });
+
+    if (err) {
+      throw err;
+    } else {
+      callback(null, data);
+    }
   });
-  callback(null, data);
 };
 
 exports.readOne = (id, callback) => {
